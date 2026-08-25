@@ -1,8 +1,8 @@
 import { createBrowserClient } from "@supabase/ssr";
-import { getEnvError } from "@/lib/env";
+import { getPublicEnvError } from "@/lib/env";
 
 export function createClient() {
-  const err = getEnvError();
+  const err = getPublicEnvError();
   if (err) throw new Error(err);
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
