@@ -58,7 +58,12 @@ export async function saveAttendance(formData: FormData) {
   const { data: session, error: sErr } = await supabase
     .from("attendance_sessions")
     .upsert(
-      { teaching_assignment_id, teacher_id: profile.id, session_date },
+      {
+        teaching_assignment_id,
+        teacher_id: profile.id,
+        session_date,
+        school_id: profile.school_id,
+      },
       { onConflict: "teaching_assignment_id,session_date" },
     )
     .select()
