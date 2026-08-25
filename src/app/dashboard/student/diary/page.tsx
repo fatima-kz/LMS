@@ -19,7 +19,22 @@ export default async function DiaryPage() {
     .eq("is_current", true)
     .single();
 
-  const { data: subjects } = await supabase.from("subjects").select("id, name").order("name");
+  // Get the student's class to filter subjects
+  const { data: enrollment } = await supabase
+    .from("enrollments")
+    .select("section_id, section:sections(class_id)")
+    .eq("student_id", profile!.id)
+    .eq("academic_year_id", year?.id ?? "")
+    .eq("status", "active")
+    .single();
+
+  const classId = (enrollment?.section as unknown as { class_id: string } | null)?.class_id ?? "";
+
+  const { data: subjects } = await supabase
+    .from("subjects")
+    .select("id, name")
+    .eq("class_id", classId)
+    .order("name");
 
   const { data: entries } = await supabase
     .from("daily_diary_entries")

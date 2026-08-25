@@ -148,12 +148,14 @@ create unique index on public.sections (class_id, name);
 create table public.subjects (
   id uuid primary key default uuid_generate_v4(),
   school_id uuid not null references public.schools(id) on delete cascade,
+  class_id uuid not null references public.classes(id) on delete cascade,
   name text not null,
   code text,
   created_at timestamptz not null default now()
 );
 create index on public.subjects (school_id);
-create unique index on public.subjects (school_id, code);
+create index on public.subjects (class_id);
+create unique index on public.subjects (school_id, class_id, name);
 
 -- One enrollment per student per academic year (history mechanism).
 create table public.enrollments (

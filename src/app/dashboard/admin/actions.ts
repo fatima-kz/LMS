@@ -129,12 +129,14 @@ export async function deleteSection(formData: FormData) {
 export async function createSubject(formData: FormData) {
   const name = String(formData.get("name"));
   const code = String(formData.get("code") || "");
+  const class_id = String(formData.get("class_id"));
   if (!name) return { error: "Name is required" };
+  if (!class_id) return { error: "Class is required" };
   const school_id = await adminSchoolId();
   const supabase = await createClient();
   const { error } = await supabase
     .from("subjects")
-    .insert({ name, code: code || null, school_id });
+    .insert({ name, code: code || null, school_id, class_id });
   if (error) return { error: error.message };
   revalidatePath("/dashboard/admin/subjects");
   return { ok: true };
