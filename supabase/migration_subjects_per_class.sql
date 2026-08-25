@@ -25,7 +25,7 @@ create unique index subjects_unique_per_class
   on public.subjects (school_id, class_id, name);
 
 -- 5. Add index for class_id lookups
-create index if not exists on public.subjects (class_id);
+create index if not exists subjects_class_id_idx on public.subjects (class_id);
 
 -- Done. Each class now has its own subjects, and teaching_assignments
 -- (teacher + subject + section + year) naturally ties a teacher to a
