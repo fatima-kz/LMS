@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/app/actions";
 import { cn } from "@/lib/utils";
 import type { Role } from "@/lib/types";
 
@@ -18,17 +19,18 @@ const icons: Record<string, string> = {
   history: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z",
   assignment: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2",
   diary: "M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h12a2 2 0 002-2v-5M13 3h6a2 2 0 012 2v6a2 2 0 01-2 2h-6a2 2 0 01-2-2V5a2 2 0 012-2z",
+  logout: "M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1",
 };
 
 function Icon({ name }: { name: string }) {
   const d = icons[name] ?? icons.overview;
   return (
     <svg
-      className="h-5 w-5 shrink-0"
+      className="h-4 w-4 shrink-0"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
     >
@@ -49,49 +51,85 @@ export function Sidebar({
   userName: string;
 }) {
   const pathname = usePathname();
+
   return (
-    <aside className="flex h-screen w-64 flex-col border-r bg-card">
-      <div className="flex h-14 items-center gap-2 border-b px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-          {schoolName.charAt(0) ?? "L"}
+    <aside className="flex h-screen w-64 flex-col justify-between border-r border-[#ECE6F0] bg-white font-sans">
+      
+      {/* Top Section: School Branding + Nav Links */}
+      <div className="flex flex-col overflow-y-auto px-4 py-6">
+        
+        {/* School Logo Header */}
+        <div className="mb-8 flex items-center gap-3 px-2">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#7C3AED] text-base font-black text-white shadow-sm shadow-[#7C3AED]/30">
+            {schoolName.charAt(0) ?? "L"}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-extrabold text-[#1c1b1b]">
+              {schoolName}
+            </p>
+            <p className="text-[11px] font-semibold text-[#7b7487] capitalize">
+              {role} portal
+            </p>
+          </div>
         </div>
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold">{schoolName}</p>
-          <p className="text-xs capitalize text-muted-foreground">{role} portal</p>
-        </div>
+
+        {/* Navigation Items */}
+        <nav className="space-y-1">
+          {items.map((item) => {
+            // Fix: Overview only highlights on exact match, other pages can match sub-routes
+            const isOverview = item.href === `/dashboard/${role}`;
+            const active = isOverview
+              ? pathname === item.href
+              : pathname === item.href || pathname.startsWith(item.href + "/");
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-xs font-bold transition-all",
+                  active
+                    ? "bg-[#7C3AED] text-white shadow-sm shadow-[#7C3AED]/25"
+                    : "text-[#4a4455] hover:bg-[#F6F3F2] hover:text-[#1c1b1b]"
+                )}
+              >
+                <Icon name={item.icon} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        {items.map((item) => {
-          const active =
-            pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                active
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-accent hover:text-foreground",
-              )}
-            >
-              <Icon name={item.icon} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="border-t p-3">
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary">
-            {userName.charAt(0)}
+
+      {/* Bottom Section: Profile + Sign Out Button */}
+      <div className="border-t border-[#ECE6F0] p-4 bg-[#FDFAFF]/60">
+        {/* User Profile Info */}
+        <div className="flex items-center gap-3 px-2 py-1">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EDE0FF] text-xs font-extrabold text-[#630ED4] ring-2 ring-white shadow-sm">
+            {userName.charAt(0) ?? "U"}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{userName}</p>
-            <p className="text-xs capitalize text-muted-foreground">{role}</p>
+            <p className="truncate text-xs font-extrabold text-[#1c1b1b]">
+              {userName}
+            </p>
+            <p className="text-[11px] font-medium capitalize text-[#7b7487]">
+              {role}
+            </p>
           </div>
         </div>
+
+        {/* Sign Out Button */}
+        <form action={logout} className="mt-2.5">
+          <button
+            type="submit"
+            className="flex w-full items-center gap-2.5 rounded-xl border border-transparent px-2.5 py-2 text-xs font-bold text-[#4a4455] transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+          >
+            <Icon name="logout" />
+            <span>Sign out</span>
+          </button>
+        </form>
       </div>
+
     </aside>
   );
 }

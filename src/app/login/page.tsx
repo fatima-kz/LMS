@@ -29,19 +29,36 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     const supabase = createClient();
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      toast.error(error.message);
+    
+    // 1. Authenticate with Supabase
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ 
+      email, 
+      password 
+    });
+
+    if (error || !authData?.user) {
+      toast.error(error?.message ?? "Failed to sign in");
       setLoading(false);
       return;
     }
-    const { data } = await supabase
+
+    // 2. Fetch the specific logged-in user's role
+    const { data: profile } = await supabase
       .from("profiles")
       .select("role")
+      .eq("id", authData.user.id)
       .single();
-    const role = data?.role ?? "admin";
-    const redirect = params.get("redirect") ?? `/dashboard/${role}`;
-    router.push(redirect);
+
+    const role = profile?.role ?? "student";
+
+    // 3. Ensure role-based routing (prevents sending students to admin routes)
+    const redirectParam = params.get("redirect");
+    const target = 
+      redirectParam && redirectParam.startsWith(`/dashboard/${role}`)
+        ? redirectParam
+        : `/dashboard/${role}`;
+
+    router.push(target);
     router.refresh();
   }
 
@@ -163,16 +180,16 @@ function LoginForm() {
           </div>
         </div>
 
-        {/* Right Side: Exact Visual Replica of the 3-Circle Gradient Design */}
+        {/* Right Side: 3-Circle Gradient Design */}
         <div className="relative hidden md:flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#E8DCF8] via-[#F4EDFC] to-[#FDF3DE]">
           
-          {/* Top-Right Vibrant Coral Circle with Soft Glow */}
+          {/* Top-Right Vibrant Coral Circle */}
           <div className="absolute top-12 right-12 h-32 w-32 rounded-full bg-[#FF4D6D] shadow-[0_16px_36px_rgba(255,77,109,0.35)]" />
 
           {/* Center Semi-Transparent Frosted White Disc */}
           <div className="h-48 w-48 sm:h-52 sm:w-52 rounded-full bg-white/45 backdrop-blur-sm" />
 
-          {/* Bottom-Left Vibrant Sunny Yellow Circle with Soft Glow */}
+          {/* Bottom-Left Vibrant Sunny Yellow Circle */}
           <div className="absolute bottom-12 left-12 h-28 w-28 rounded-full bg-[#FFD600] shadow-[0_14px_32px_rgba(255,214,0,0.38)]" />
 
         </div>

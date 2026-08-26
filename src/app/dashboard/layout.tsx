@@ -1,8 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentProfile, getCurrentSchool } from "@/lib/data";
 import { Sidebar, type NavItem } from "@/components/dashboard/sidebar";
-import { logout } from "@/app/actions";
-import { Button } from "@/components/ui/button";
 import type { Role } from "@/lib/types";
 
 const NAV: Record<Role, NavItem[]> = {
@@ -45,7 +43,7 @@ export default async function DashboardLayout({
   const school = await getCurrentSchool();
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-[#FDFAFF]">
       <Sidebar
         items={NAV[profile.role]}
         role={profile.role}
@@ -53,17 +51,7 @@ export default async function DashboardLayout({
         userName={profile.full_name}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center justify-between border-b bg-card px-6">
-          <p className="text-sm text-muted-foreground">
-            {school?.name ?? "LMS"}
-          </p>
-          <form action={logout}>
-            <Button type="submit" variant="ghost" size="sm">
-              Sign out
-            </Button>
-          </form>
-        </header>
-        <main className="flex-1 overflow-y-auto bg-muted/30 p-6">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-10">
           {children}
         </main>
       </div>
