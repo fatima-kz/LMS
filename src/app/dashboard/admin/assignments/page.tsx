@@ -64,6 +64,13 @@ export default async function AssignmentsPage({
           background: white;
           box-shadow: 0 0 0 3px rgba(124,58,237,0.1);
         }
+        .select-wrapper:focus-within .select-chevron {
+          color: #7C3AED;
+          transform: rotate(180deg);
+        }
+        .select-chevron {
+          transition: transform 0.2s ease, color 0.2s ease;
+        }
         .icon-header {
           transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s;
         }
@@ -94,12 +101,6 @@ export default async function AssignmentsPage({
         }
         .empty-icon:hover {
           transform: scale(1.1) rotate(5deg);
-        }
-        .session-chip {
-          transition: all 0.2s ease;
-        }
-        .session-chip:hover {
-          background: rgba(234,221,255,0.5);
         }
         .filter-btn {
           transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -150,17 +151,24 @@ export default async function AssignmentsPage({
               </svg>
             </div>
             <span className="text-xs font-bold uppercase tracking-wide text-[#4A4455]">Session</span>
-            <select
-              name="year"
-              defaultValue={selectedYearId}
-              className="input-themed appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2 text-sm font-semibold text-[#1C1B1B] outline-none"
-            >
-              {years?.map((y) => (
-                <option key={y.id} value={y.id}>
-                  {y.name} {y.is_current ? "(current)" : ""}
-                </option>
-              ))}
-            </select>
+            <div className="select-wrapper relative">
+              <select
+                name="year"
+                defaultValue={selectedYearId}
+                className="input-themed appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2 pr-9 text-sm font-semibold text-[#1C1B1B] outline-none"
+              >
+                {years?.map((y) => (
+                  <option key={y.id} value={y.id}>
+                    {y.name} {y.is_current ? "(current)" : ""}
+                  </option>
+                ))}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5">
+                <svg className="select-chevron h-4 w-4 text-[#7B7487]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
             <button
               type="submit"
               className="filter-btn rounded-lg bg-[#7C3AED] px-4 py-2 text-xs font-bold text-white"
@@ -206,21 +214,28 @@ export default async function AssignmentsPage({
                       </label>
                     </div>
                     <div className="flex gap-2">
-                      <select
-                        name="section"
-                        defaultValue={selectedSectionId}
-                        className="input-themed block flex-1 appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 text-sm text-[#1C1B1B] outline-none"
-                      >
-                        <option value="">Select section…</option>
-                        {(sections.data ?? []).map((s) => {
-                          const cls = s.class as unknown as { name: string } | null;
-                          return (
-                            <option key={s.id} value={s.id}>
-                              {cls?.name} — {s.name}
-                            </option>
-                          );
-                        })}
-                      </select>
+                      <div className="select-wrapper relative flex-1">
+                        <select
+                          name="section"
+                          defaultValue={selectedSectionId}
+                          className="input-themed block w-full appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 pr-10 text-sm text-[#1C1B1B] outline-none"
+                        >
+                          <option value="">Select section…</option>
+                          {(sections.data ?? []).map((s) => {
+                            const cls = s.class as unknown as { name: string } | null;
+                            return (
+                              <option key={s.id} value={s.id}>
+                                {cls?.name} — {s.name}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                          <svg className="select-chevron h-4 w-4 text-[#7B7487]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
                       <input type="hidden" name="year" value={selectedYearId} />
                       <button
                         type="submit"
@@ -245,43 +260,57 @@ export default async function AssignmentsPage({
                         <label htmlFor="teacher_id" className="block text-xs font-bold uppercase tracking-wide text-[#4A4455]">
                           Teacher
                         </label>
-                        <select
-                          id="teacher_id"
-                          name="teacher_id"
-                          required
-                          className="input-themed block w-full appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 text-sm text-[#1C1B1B] outline-none"
-                        >
-                          <option value="">Select teacher…</option>
-                          {(teachers.data ?? []).map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.full_name}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="select-wrapper relative">
+                          <select
+                            id="teacher_id"
+                            name="teacher_id"
+                            required
+                            className="input-themed block w-full appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 pr-10 text-sm text-[#1C1B1B] outline-none"
+                          >
+                            <option value="">Select teacher…</option>
+                            {(teachers.data ?? []).map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.full_name}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg className="select-chevron h-4 w-4 text-[#7B7487]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
                       <div className="space-y-1.5">
                         <label htmlFor="subject_id" className="block text-xs font-bold uppercase tracking-wide text-[#4A4455]">
                           Subject
                         </label>
-                        <select
-                          id="subject_id"
-                          name="subject_id"
-                          required
-                          disabled={!selectedSectionId}
-                          className="input-themed block w-full appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 text-sm text-[#1C1B1B] outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          <option value="">
-                            {selectedSectionId ? "Select subject…" : "Pick a section first"}
-                          </option>
-                          {(subjects ?? []).map((s) => {
-                            const cls = s.class as unknown as { name: string } | null;
-                            return (
-                              <option key={s.id} value={s.id}>
-                                {cls?.name} — {s.name}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div className="select-wrapper relative">
+                          <select
+                            id="subject_id"
+                            name="subject_id"
+                            required
+                            disabled={!selectedSectionId}
+                            className="input-themed block w-full appearance-none rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 pr-10 text-sm text-[#1C1B1B] outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <option value="">
+                              {selectedSectionId ? "Select subject…" : "Pick a section first"}
+                            </option>
+                            {(subjects ?? []).map((s) => {
+                              const cls = s.class as unknown as { name: string } | null;
+                              return (
+                                <option key={s.id} value={s.id}>
+                                  {cls?.name} — {s.name}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                            <svg className="select-chevron h-4 w-4 text-[#7B7487]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                        </div>
                       </div>
 
                       {selectedSectionId && (
@@ -304,7 +333,6 @@ export default async function AssignmentsPage({
           {/* Assignments Table */}
           <div className="lg:col-span-2">
             <div className="card-themed rounded-xl border border-[#EDE0FF] bg-white shadow-[0_4px_12px_rgba(124,58,237,0.06)]">
-              {/* Header */}
               <div className="flex items-center justify-between border-b border-[#EDE0FF] px-6 py-4">
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-bold text-[#1C1B1B]">Assignments</h2>
@@ -322,7 +350,6 @@ export default async function AssignmentsPage({
                 )}
               </div>
 
-              {/* Content */}
               <div className="p-6">
                 {!assignments.data?.length ? (
                   <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-[#CCC3D8] bg-[#FDFAFF] py-12">
@@ -352,7 +379,6 @@ export default async function AssignmentsPage({
                           const sec = a.section as unknown as { name: string; class: { name: string } } | null;
                           return (
                             <tr key={a.id} className="table-row-themed group border-b border-[#F6F3F2] last:border-0">
-                              {/* Teacher */}
                               <td className="py-3 pr-4">
                                 <div className="flex items-center gap-2.5">
                                   <div className="avatar-mini flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#7C3AED] to-[#630ED4] text-[11px] font-bold text-white">
@@ -363,7 +389,6 @@ export default async function AssignmentsPage({
                                   </span>
                                 </div>
                               </td>
-                              {/* Subject */}
                               <td className="py-3 pr-4">
                                 {sub ? (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-[#EADDFF]/40 px-2 py-0.5 text-xs font-semibold text-[#7C3AED]">
@@ -373,7 +398,6 @@ export default async function AssignmentsPage({
                                   <span className="text-sm text-[#CCC3D8]">—</span>
                                 )}
                               </td>
-                              {/* Section */}
                               <td className="py-3 pr-4">
                                 {sec ? (
                                   <span className="inline-flex items-center gap-1 rounded-md bg-[#FFD600]/15 px-2 py-0.5 text-xs font-semibold text-[#6F5C00]">
@@ -383,7 +407,6 @@ export default async function AssignmentsPage({
                                   <span className="text-sm text-[#CCC3D8]">—</span>
                                 )}
                               </td>
-                              {/* Actions */}
                               <td className="py-3">
                                 <div className="row-actions flex justify-end opacity-50 transition-opacity">
                                   <DeleteButton action={deleteAssignment} id={a.id} label="Unassign" />
