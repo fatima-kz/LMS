@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/data";
-import { PageHeader, EmptyState } from "@/components/ui/misc";
+import { PageHeader, EmptyState, StatCard } from "@/components/ui/misc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label, Select } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Table, THead, TBody, TRow, TH, TD } from "@/components/ui/table";
 import { saveAttendance } from "../actions";
 import { AttendanceForm } from "./attendance-form";
+import { formatDate } from "@/lib/utils";
 
 export default async function TeacherAttendancePage({
   searchParams,
@@ -51,9 +54,23 @@ export default async function TeacherAttendancePage({
     });
   }
 
+  // Past attendance sessions for this class (current year)
+  const { data: sessions } = await supabase
+    .from("attendance_sessions")
+    .select("id, session_date, attendance_entries:attendance_entries(status)")
+    .eq("teaching_assignment_id", taId ?? "")
+    .order("session_date", { ascending: false });
+
+  type SessionRow = {
+    id: string;
+    session_date: string;
+    attendance_entries: { status: string }[];
+  };
+  const pastSessions = (sessions ?? []) as unknown as SessionRow[];
+
   return (
     <div>
-      <PageHeader title="Attendance" description="Take attendance for one of your classes." />
+      <PageHeader title="Attendance" description="Take or review attendance for your classes." />
 
       <div className="mb-4 grid gap-2 sm:grid-cols-2">
         <form className="space-y-1">
@@ -85,21 +102,85 @@ export default async function TeacherAttendancePage({
         </form>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Roster for {date}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!taId || !students.length ? (
-            <EmptyState
-              title={taId ? "No students in this section" : "Select a class"}
-              description={taId ? "Enroll students first (admin)." : "Choose a class and date above."}
-            />
-          ) : (
-            <AttendanceForm action={saveAttendance} taId={taId} date={date} students={students} />
-          )}
-        </CardContent>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Take attendance — {date}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!taId || !students.length ? (
+              <EmptyState
+                title={taId ? "No students in this section" : "Select a class"}
+                description={taId ? "Enroll students first (admin)." : "Choose a class and date above."}
+              />
+            ) : (
+              <AttendanceForm action={saveAttendance} taId={taId} date={date} students={students} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Past sessions ({pastSessions.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!taId ? (
+              <EmptyState title="Select a class" description="Past attendance appears once you choose a class." />
+            ) : !pastSessions.length ? (
+              <EmptyState title="No attendance taken yet" description="Sessions you record will show up here." />
+            ) : (
+              <div className="space-y-3">
+                {pastSessions.map((s) => {
+                  const counts: Record<string, number> = {};
+                  for (const e of s.attendance_entries ?? [])
+                    counts[e.status] = (counts[e.status] ?? 0) + 1;
+                  return (
+                    <div key={s.id} className="rounded-md border p-3">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">{formatDate(s.session_date)}</p>
+                        <Badge variant="secondary">{s.attendance_entries?.length ?? 0} students</Badge>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                        <span className="text-emerald-600">Present {counts["present"] ?? 0}</span>
+                        <span className="text-red-600">Absent {counts["absent"] ?? 0}</span>
+                        <span className="text-amber-600">Late {counts["late"] ?? 0}</span>
+                        <span className="text-muted-foreground">Excused {counts["excused"] ?? 0}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Full roster table for the selected class */}
+      {taId && students.length > 0 && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Class roster ({students.length})</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <THead>
+                <TRow>
+                  <TH>Roll</TH>
+                  <TH>Student</TH>
+                </TRow>
+              </THead>
+              <TBody>
+                {students.map((s) => (
+                  <TRow key={s.id}>
+                    <TD>{s.roll ?? "—"}</TD>
+                    <TD className="font-medium">{s.name}</TD>
+                  </TRow>
+                ))}
+              </TBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
