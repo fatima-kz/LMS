@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-const PUBLIC_ROUTES = ["/login", "/register-school"];
+const PUBLIC_ROUTES = ["/login", "/security-portal"];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });

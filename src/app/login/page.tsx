@@ -167,17 +167,6 @@ function LoginForm() {
               </Button>
             </form>
           </div>
-
-          {/* Footer Link */}
-          <div className="mt-8 text-center text-xs text-[#4a4455]">
-            New school?{" "}
-            <Link 
-              href="/register-school" 
-              className="font-bold text-[#7C3AED] hover:underline"
-            >
-              Register your school
-            </Link>
-          </div>
         </div>
 
         {/* Right Side: 3-Circle Gradient Design */}

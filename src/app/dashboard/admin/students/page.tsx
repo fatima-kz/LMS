@@ -190,7 +190,7 @@ export default async function StudentsPage() {
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wide text-[#4A4455]">
-                      Initial password
+                      Password
                     </label>
                     <input
                       id="password"
