@@ -1,8 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/data";
-import { PageHeader, EmptyState, StatCard } from "@/components/ui/misc";
+import { PageHeader, EmptyState } from "@/components/ui/misc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label, Select } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, THead, TBody, TRow, TH, TD } from "@/components/ui/table";
 import { saveAttendance } from "../actions";
@@ -17,16 +18,18 @@ export default async function TeacherAttendancePage({
   const sp = await searchParams;
   const supabase = await createClient();
   const profile = await getCurrentProfile();
+  if (!profile) throw new Error("Unauthorized");
+
   const { data: year } = await supabase
     .from("academic_years")
-    .select("id")
+    .select("id, name")
     .eq("is_current", true)
-    .single();
+    .maybeSingle();
 
   const { data: assignments } = await supabase
     .from("teaching_assignments")
     .select("id, subject:subjects(name), section:sections(id, name, class:classes(name))")
-    .eq("teacher_id", profile!.id)
+    .eq("teacher_id", profile.id)
     .eq("academic_year_id", year?.id ?? "")
     .order("created_at");
 
@@ -54,28 +57,53 @@ export default async function TeacherAttendancePage({
     });
   }
 
-  // Past attendance sessions for this class (current year)
-  const { data: sessions } = await supabase
-    .from("attendance_sessions")
-    .select("id, session_date, attendance_entries:attendance_entries(status)")
-    .eq("teaching_assignment_id", taId ?? "")
-    .order("session_date", { ascending: false });
-
-  type SessionRow = {
+  // Past attendance: fetch sessions, then entries separately (avoids fragile nested joins)
+  let pastSessions: {
     id: string;
     session_date: string;
-    attendance_entries: { status: string }[];
-  };
-  const pastSessions = (sessions ?? []) as unknown as SessionRow[];
+    entries: { status: string }[];
+  }[] = [];
+
+  if (taId) {
+    const { data: sessions } = await supabase
+      .from("attendance_sessions")
+      .select("id, session_date")
+      .eq("teaching_assignment_id", taId)
+      .order("session_date", { ascending: false });
+
+    if (sessions && sessions.length > 0) {
+      const sessionIds = sessions.map((s) => s.id);
+      const { data: allEntries } = await supabase
+        .from("attendance_entries")
+        .select("id, status, attendance_session_id")
+        .in("attendance_session_id", sessionIds);
+
+      // Group entries by session
+      const entriesBySession: Record<string, { status: string }[]> = {};
+      for (const e of allEntries ?? []) {
+        (entriesBySession[e.attendance_session_id] ??= []).push({ status: e.status });
+      }
+
+      pastSessions = sessions.map((s) => ({
+        id: s.id,
+        session_date: s.session_date,
+        entries: entriesBySession[s.id] ?? [],
+      }));
+    }
+  }
+
+  // Check if attendance was already taken for this date
+  const alreadyTaken = pastSessions.some((s) => s.session_date === date);
 
   return (
     <div>
       <PageHeader title="Attendance" description="Take or review attendance for your classes." />
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2">
-        <form className="space-y-1">
+      {/* Single combined form: class + date together so neither is lost on submit */}
+      <form className="mb-6 flex flex-wrap items-end gap-4 rounded-lg border bg-card p-4">
+        <div className="space-y-1">
           <Label>Class</Label>
-          <Select name="ta" defaultValue={taId}>
+          <Select name="ta" defaultValue={taId} className="w-64">
             <option value="">Select…</option>
             {(assignments ?? []).map((a) => {
               const sub = a.subject as unknown as { name: string } | null;
@@ -87,31 +115,35 @@ export default async function TeacherAttendancePage({
               );
             })}
           </Select>
-        </form>
-        <form className="space-y-1">
+        </div>
+        <div className="space-y-1">
           <Label>Date</Label>
           <input
             name="date"
             type="date"
             defaultValue={date}
-            className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+            className="flex h-9 w-40 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
           />
-          <button type="submit" className="rounded-md border px-3 py-1 text-xs hover:bg-accent">
-            Load roster
-          </button>
-        </form>
-      </div>
+        </div>
+        <Button type="submit" size="sm">Load</Button>
+      </form>
 
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Take attendance */}
         <Card>
           <CardHeader>
-            <CardTitle>Take attendance — {date}</CardTitle>
+            <CardTitle>Take attendance — {formatDate(date)}</CardTitle>
           </CardHeader>
           <CardContent>
-            {!taId || !students.length ? (
+            {!taId ? (
               <EmptyState
-                title={taId ? "No students in this section" : "Select a class"}
-                description={taId ? "Enroll students first (admin)." : "Choose a class and date above."}
+                title="Select a class"
+                description="Choose a class and date above, then click Load."
+              />
+            ) : !students.length ? (
+              <EmptyState
+                title="No students in this section"
+                description="Enroll students first (admin)."
               />
             ) : (
               <AttendanceForm action={saveAttendance} taId={taId} date={date} students={students} />
@@ -119,6 +151,7 @@ export default async function TeacherAttendancePage({
           </CardContent>
         </Card>
 
+        {/* Past sessions */}
         <Card>
           <CardHeader>
             <CardTitle>Past sessions ({pastSessions.length})</CardTitle>
@@ -126,19 +159,18 @@ export default async function TeacherAttendancePage({
           <CardContent>
             {!taId ? (
               <EmptyState title="Select a class" description="Past attendance appears once you choose a class." />
-            ) : !pastSessions.length ? (
+            ) : pastSessions.length === 0 ? (
               <EmptyState title="No attendance taken yet" description="Sessions you record will show up here." />
             ) : (
               <div className="space-y-3">
                 {pastSessions.map((s) => {
                   const counts: Record<string, number> = {};
-                  for (const e of s.attendance_entries ?? [])
-                    counts[e.status] = (counts[e.status] ?? 0) + 1;
+                  for (const e of s.entries) counts[e.status] = (counts[e.status] ?? 0) + 1;
                   return (
                     <div key={s.id} className="rounded-md border p-3">
                       <div className="flex items-center justify-between">
                         <p className="font-medium">{formatDate(s.session_date)}</p>
-                        <Badge variant="secondary">{s.attendance_entries?.length ?? 0} students</Badge>
+                        <Badge variant="secondary">{s.entries.length} students</Badge>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-3 text-xs">
                         <span className="text-emerald-600">Present {counts["present"] ?? 0}</span>

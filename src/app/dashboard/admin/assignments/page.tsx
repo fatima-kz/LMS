@@ -137,7 +137,7 @@ export default async function AssignmentsPage({
             </div>
             <div>
               <h1 className="text-2xl font-extrabold tracking-tight text-[#1C1B1B]">Teaching Assignments</h1>
-              <p className="text-sm text-[#7B7487]">Pick a section, then assign a teacher to one of that class's subjects.</p>
+              <p className="text-sm text-[#7B7487]">Pick a section, then assign a teacher to one of that class&apos;s subjects.</p>
             </div>
           </div>
         </div>
