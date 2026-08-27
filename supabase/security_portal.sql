@@ -4,6 +4,9 @@
 -- Stores credentials for the locked security portal (school creation access)
 -- ============================================================================
 
+-- pgcrypto provides crypt() and gen_salt() for bcrypt password hashing
+create extension if not exists pgcrypto;
+
 -- Drop existing if re-running
 drop table if exists public.security_portal_credentials cascade;
 
