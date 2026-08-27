@@ -11,9 +11,13 @@ export function TeacherAnnouncementForm({
   sections: { id: string; label: string }[];
 }) {
   const [audience, setAudience] = useState("my_sections");
+  const [sectionId, setSectionId] = useState("");
+
+  const isSpecific = audience === "section";
+  const submitDisabled = isSpecific && !sectionId;
 
   return (
-    <FormShell action={createAnnouncementTeacher} submitLabel="Send">
+    <FormShell action={createAnnouncementTeacher} submitLabel="Send" submitDisabled={submitDisabled}>
       <div className="space-y-3">
         <div className="space-y-1">
           <Label htmlFor="title">Title</Label>
@@ -43,6 +47,8 @@ export function TeacherAnnouncementForm({
             name="section_id"
             disabled={audience === "my_sections"}
             className={audience === "my_sections" ? "opacity-50" : ""}
+            value={sectionId}
+            onChange={(e) => setSectionId(e.target.value)}
           >
             <option value="">Select section…</option>
             {sections.map((s) => (
@@ -54,6 +60,11 @@ export function TeacherAnnouncementForm({
           {audience === "my_sections" && (
             <p className="text-xs text-muted-foreground">
               This announcement will be sent to all sections you teach.
+            </p>
+          )}
+          {isSpecific && !sectionId && (
+            <p className="text-xs text-destructive">
+              Please select a section to send the announcement.
             </p>
           )}
         </div>

@@ -9,11 +9,13 @@ export function FormShell({
   submitLabel = "Save",
   className,
   children,
+  submitDisabled = false,
 }: {
   action: (formData: FormData) => FormState | Promise<FormState>;
   submitLabel?: string;
   className?: string;
   children: React.ReactNode;
+  submitDisabled?: boolean;
 }) {
   const wrapped = async (_prev: FormState, formData: FormData) => action(formData);
   const [state, formAction, pending] = useActionState(wrapped, null as FormState);
@@ -41,7 +43,7 @@ export function FormShell({
 
       <button
         type="submit"
-        disabled={pending}
+        disabled={pending || submitDisabled}
         className="group relative mt-4 flex w-full items-center justify-center gap-2 overflow-hidden rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#630ED4] px-4 py-3 text-sm font-bold text-white shadow-[0_2px_8px_rgba(124,58,237,0.25)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(124,58,237,0.35)] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-60"
       >
         {/* Shimmer overlay on hover */}
