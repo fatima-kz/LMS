@@ -58,12 +58,15 @@ create or replace function public.verify_portal_credentials(
   p_password text
 )
 returns boolean
-language sql security definer set search_path = public
+language sql
+security definer
+set search_path = public, extensions
 as $$
   select exists (
-    select 1 from public.security_portal_credentials
+    select 1
+    from public.security_portal_credentials
     where email = lower(p_email)
       and is_active = true
-      and password_hash = crypt(p_password, password_hash)
+      and password_hash = extensions.crypt(p_password, password_hash)
   );
 $$;
