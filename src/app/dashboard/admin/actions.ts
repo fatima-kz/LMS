@@ -183,16 +183,29 @@ export async function enrollStudent(formData: FormData) {
   const student_id = String(formData.get("student_id"));
   const section_id = String(formData.get("section_id"));
   const academic_year_id = String(formData.get("academic_year_id"));
+  let roll_number = String(formData.get("roll_number") || "").trim();
   if (!student_id || !section_id || !academic_year_id)
     return { error: "Student, section and year are required" };
   const school_id = await adminSchoolId();
   const supabase = await createClient();
+
+  // Auto-assign roll number if not provided
+  if (!roll_number) {
+    const { count } = await supabase
+      .from("enrollments")
+      .select("*", { count: "exact", head: true })
+      .eq("section_id", section_id)
+      .eq("academic_year_id", academic_year_id);
+    roll_number = String((count ?? 0) + 1);
+  }
+
   const { error } = await supabase.from("enrollments").insert({
     student_id,
     section_id,
     academic_year_id,
     status: "active",
     school_id,
+    roll_number,
   });
   if (error) return { error: error.message };
   revalidatePath("/dashboard/admin/enrollments");

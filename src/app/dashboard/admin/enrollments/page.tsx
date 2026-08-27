@@ -287,6 +287,18 @@ export default async function EnrollmentsPage({
                         </div>
                       </div>
                     </div>
+                    <div className="space-y-1.5">
+                      <label htmlFor="roll_number" className="block text-xs font-bold uppercase tracking-wide text-[#4A4455]">
+                        Roll number (optional)
+                      </label>
+                      <input
+                        id="roll_number"
+                        name="roll_number"
+                        type="text"
+                        placeholder="Auto-assigned if left blank"
+                        className="input-themed block w-full rounded-lg border-2 border-transparent bg-[#F6F3F2] px-3 py-2.5 text-sm text-[#1C1B1B] outline-none"
+                      />
+                    </div>
                   </div>
                 </FormShell>
               )}
